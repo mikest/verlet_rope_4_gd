@@ -632,7 +632,7 @@ func _physics_process(delta: float) -> void:
 		if _particle_data != null and attached_objects.size() > 0:
 			update_attached_objects_editor()
 			
-		return # Don't process simulation in editor
+		
 
 	_time += delta
 	_simulation_delta += delta
