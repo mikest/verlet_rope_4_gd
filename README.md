@@ -40,3 +40,13 @@ Thoughts, criticism, suggestions, and contributions are welcome! Feel free to:
 - 💬 Share your experience using this addon
 
 All feedback is appreciated and will help improve this Godot addon.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
+### Contributors:
+- **Oleksander @sanyabeast Haivoronskyi** - Godot 4 adaptation with additional features
+- **Timofey @tshmofen Ivanov** - 2024 contributions
+- **Zae @zaevi Chao** - 2023
+- **Shashank C** - 2021 original work

@@ -1,10 +1,13 @@
 MIT License
 
-Rewritten to be used with Godot 4.0+.
-No additional license applied, feel free to use without my notice, though do not forget to still apply original license.
-(c) Timofey Ivanov / tshmofen
+Rewritten to be used with Godot 4.0+ with additional features.
+No additional license applied, feel free to use without notice, though do not forget to still apply original license.
 
-Copyright (c) 2023 Zae Chao(zaevi); Copyright (c) 2021 Shashank C; No Copyright (-c) Tshmofen / Timofey Ivanov
+Copyright (c) 2025 Oleksander @sanyabeast Haivoronskyi;
+Copyright (c) 2024 Timofey @tshmofen Ivanov;
+Copyright (c) 2023 Zae @zaevi Chao;
+Copyright (c) 2021 Shashank C
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
