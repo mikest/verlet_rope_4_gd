@@ -102,12 +102,17 @@ var _simulation_particles: int = 10
 		use_visible_on_screen_notifier = value
 		update_configuration_warnings()
 
-# Nodes that will follow the end of the rope (programmatic attachments)
-var _attached_objects: Array[Node3D] = []
+@export_group("Attachment")
 
-# Objects to attach to the rope end (configured in editor)
-@export var attached_objects: Array[NodePath] = []
-var _editor_attached_objects: Array[Node3D] = []
+# Object to attach to the rope end (configured in editor)
+@export var attached_object: NodePath
+var _editor_attached_object: Node3D = null
+
+# Whether the attached object should follow the rope's end orientation
+@export var rotate_attached_object: bool = false
+
+# Node that will follow the end of the rope (programmatic attachment)
+var _attached_object: Node3D = null
 
 var _attach_start := true
 @export var attach_start: bool = true:
@@ -553,17 +558,14 @@ func _ready() -> void:
 		draw = true
 		simulate = true
 
-	# Process objects attached via editor
-	_editor_attached_objects.clear()
-	for path in attached_objects:
-		if path.is_empty():
-			continue
-			
-		var node = get_node_or_null(path)
+	# Process object attached via editor
+	_editor_attached_object = null
+	if not attached_object.is_empty():
+		var node = get_node_or_null(attached_object)
 		if node is Node3D:
-			_editor_attached_objects.append(node)
+			_editor_attached_object = node
 		else:
-			push_warning("Attached object path " + str(path) + " is not a Node3D")
+			push_warning("Attached object path is not a Node3D")
 
 	# Ensure ImmediateMesh exists and is unique to this instance
 	#_mesh = Mesh as ImmediateMesh
@@ -628,11 +630,10 @@ func _physics_process(delta: float) -> void:
 			print("Creating rope in editor")
 			create_rope()
 		
-		# Update editor attachments (if any)
-		if _particle_data != null and attached_objects.size() > 0:
-			update_attached_objects_editor()
+		# Update editor attachment (if any)
+		if _particle_data != null and not attached_object.is_empty():
+			update_attached_object_editor()
 			
-		
 
 	_time += delta
 	_simulation_delta += delta
@@ -747,54 +748,67 @@ func attach_object_to_end(object: Node3D) -> void:
 	if object == null:
 		return
 		
-	if not _attached_objects.has(object):
-		_attached_objects.append(object)
-		print("Object attached to rope end: ", object.name)
+	_attached_object = object
+	print("Object attached to rope end: ", object.name)
 
-# Removes an attached object from following the rope end
-func detach_object_from_end(object: Node3D) -> void:
-	if object == null:
-		return
-		
-	if _attached_objects.has(object):
-		_attached_objects.erase(object)
-		print("Object detached from rope end: ", object.name)
+# Removes the attached object from following the rope end
+func detach_object_from_end() -> void:
+	if _attached_object != null:
+		print("Object detached from rope end: ", _attached_object.name)
+		_attached_object = null
 
-# Updates the position of all objects attached to the rope end during gameplay
+# Updates the position of the object attached to the rope end during gameplay
 func update_attached_objects() -> void:
-	if Engine.is_editor_hint() or _particle_data == null or (_attached_objects.size() == 0 and _editor_attached_objects.size() == 0):
+	if Engine.is_editor_hint() or _particle_data == null or (_attached_object == null and _editor_attached_object == null):
 		return
-		
-	# Get the end particle position
-	var end_particle_position = _particle_data.particles[simulation_particles - 1].position_current
 	
-	# Update programmatically attached objects
-	for object in _attached_objects:
-		if is_instance_valid(object):
-			object.global_position = end_particle_position
-			
-	# Update objects attached via editor
-	for object in _editor_attached_objects:
-		if is_instance_valid(object):
-			object.global_position = end_particle_position
+	# Get the end particle position and orientation
+	var end_index = simulation_particles - 1
+	var end_particle = _particle_data.particles[end_index]
+	var end_position = end_particle.position_current
+	
+	# Update programmatically attached object
+	if is_instance_valid(_attached_object):
+		_attached_object.global_position = end_position
+		
+		# Update rotation if enabled
+		if rotate_attached_object:
+			_update_object_rotation(_attached_object, end_particle)
+		
+	# Update object attached via editor
+	if is_instance_valid(_editor_attached_object):
+		_editor_attached_object.global_position = end_position
+		
+		# Update rotation if enabled
+		if rotate_attached_object:
+			_update_object_rotation(_editor_attached_object, end_particle)
 
-# Updates attached objects specifically in editor mode
-func update_attached_objects_editor() -> void:
+# Updates attached object specifically in editor mode
+func update_attached_object_editor() -> void:
 	if not Engine.is_editor_hint() or _particle_data == null:
 		return
 	
-	# Always refresh editor object references
-	_editor_attached_objects.clear()
-	for path in attached_objects:
-		if not path.is_empty():
-			var node = get_node_or_null(path)
-			if node is Node3D:
-				_editor_attached_objects.append(node)
+	# Always refresh editor object reference
+	_editor_attached_object = null
+	if not attached_object.is_empty():
+		var node = get_node_or_null(attached_object)
+		if node is Node3D:
+			_editor_attached_object = node
 	
-	# If we have objects, update their positions
-	if _editor_attached_objects.size() > 0:
-		var end_particle_position = _particle_data.particles[simulation_particles - 1].position_current
+	# If we have an object, update its position
+	if is_instance_valid(_editor_attached_object):
+		var end_index = simulation_particles - 1
+		var end_particle = _particle_data.particles[end_index]
+		_editor_attached_object.global_position = end_particle.position_current
 		
-		for object in _editor_attached_objects:
-			if is_instance_valid(object):
-				object.global_position = end_particle_position
+		# Update rotation if enabled
+		if rotate_attached_object:
+			_update_object_rotation(_editor_attached_object, end_particle)
+
+# Helper to update an object's rotation to match rope end orientation
+func _update_object_rotation(object: Node3D, particle) -> void:
+	# Create a basis using the particle's orientation vectors
+	var basis = Basis(particle.tangent, particle.binormal, particle.normal)
+	
+	# Convert to a quaternion and set the object's rotation
+	object.global_transform.basis = basis
