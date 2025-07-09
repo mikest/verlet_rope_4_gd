@@ -2,6 +2,8 @@
 
 This project is a direct translation of the original Verlet Rope logic from C# to GDScript.
 
+![Verlet Rope Demo](./misc/verlet_rope_4_gd.gif)
+
 ## 👏 Credits
 
 All credits and regards should go to the original project:
