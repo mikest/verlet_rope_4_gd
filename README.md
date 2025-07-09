@@ -1,4 +1,4 @@
-# Verlet Rope for Godot
+# Verlet Rope for Godot 4
 
 This project is a direct translation of the original Verlet Rope logic from C# to GDScript.
 
