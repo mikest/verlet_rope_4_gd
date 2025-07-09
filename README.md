@@ -13,6 +13,8 @@ https://github.com/Tshmofen/verlet-rope-4
 - Special feature: Ability to attach objects to the end of the rope
 
 > **Note:** The object attachment feature currently only supports position control and is a work in progress. Additional features are being developed based on the needs of a specific project, so they may or may not be useful for your particular use case. Regardless, the core functionality of the original project has been successfully ported to GDScript.
+>
+> If the current functionality doesn't suit your needs, feel free to explore older commits, open an issue, or contact me directly at [purpltie@outlook.com](mailto:purpltie@outlook.com).
 
 ## Installation
 
