@@ -46,7 +46,8 @@ All feedback is appreciated and will help improve this Godot addon.
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
 ### Contributors:
-- **Oleksander [@sanyabeast](https://github.com/sanyabeast) Haivoronskyi** - Godot 4 adaptation with additional features
-- **Timofey [@tshmofen](https://github.com/tshmofen) Ivanov** - 2024 contributions
-- **Zae [@zaevi](https://github.com/zaevi) Chao** - 2023
-- **Shashank C** - 2021 original work
+- **Oleksander [@sanyabeast](https://github.com/sanyabeast) Haivoronskyi** - C# to GDScript translation with additional features
+- **Timofey [@tshmofen](https://github.com/tshmofen) Ivanov** - 2024 - *Current Maintainer*
+- **Zae [@zaevi](https://github.com/zaevi) Chao** - 2023 
+- **Shashank C** - 2021 - Original work
+ 
