@@ -171,7 +171,7 @@ var rope_collision_behavior: int = 0 # 0 = None
 @export_range(1, 256) var max_dynamic_collisions: int = 32
 
 var _static_collision_mask: int = 1
-@export var static_collision_mask: int = 1:
+@export_flags_3d_physics var static_collision_mask: int = 1:
 	set(value):
 		static_collision_mask = value
 		_static_collision_mask = value
@@ -180,7 +180,7 @@ var _static_collision_mask: int = 1
 		if _collision_shape_parameters:
 			_collision_shape_parameters.collision_mask = value
 
-@export var dynamic_collision_mask: int = 0
+@export_flags_3d_physics var dynamic_collision_mask: int = 0
 
 var _hit_from_inside: bool = true
 @export var hit_from_inside: bool = true:
