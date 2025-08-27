@@ -1,4 +1,3 @@
-
 # MIT License
 #
 # Copyright (c) 2021 Shashank C; Copyright (c) 2023 Zae Chao(zaevi); No Copyright (-c) Tshmofen / Timofey Ivanov
@@ -163,9 +162,9 @@ var _attach_end: Node3D = null
 @export_group("Collision")
 
 @export_enum("StaticOnly", "DynamicOnly", "All")
-var rope_collision_type: int = 0  # 0 = StaticOnly
+var rope_collision_type: int = 0 # 0 = StaticOnly
 @export_enum("None", "StickyStretch", "SlideStretch")
-var rope_collision_behavior: int = 0  # 0 = None
+var rope_collision_behavior: int = 0 # 0 = None
 
 @export_range(1.0, 20.0) var max_rope_stretch: float = 1.1
 @export_range(1.0, 20.0) var slide_ignore_collision_stretch: float = 1.5
@@ -437,6 +436,15 @@ func collide_rope(dynamic_collisions: Array) -> void:
 
 		_particle_data.particles[i] = current_point
 
+
+func _get_camera() -> Camera3D:
+	var cam := get_viewport().get_camera_3d()
+	
+	if Engine.is_editor_hint():
+		return EditorInterface.get_editor_viewport_3d(0).get_camera_3d()
+	else:
+		return cam
+
 func draw_curve() -> void:
 	# Ensure mesh exists
 	if _mesh == null:
@@ -447,7 +455,7 @@ func draw_curve() -> void:
 
 	# Ensure camera exists for proper rendering
 	if _camera == null:
-		_camera = get_viewport().get_camera_3d()
+		_camera = _get_camera()
 		if _camera == null:
 			print("Warning: No camera found for rope rendering")
 			return
@@ -504,7 +512,7 @@ func verlet_process(delta: float) -> void:
 		p.position_current = (2.0 * p.position_current) - p.position_previous + (delta * delta * p.acceleration)
 		p.position_previous = position_current_copy
 
-		_particle_data.particles[i] = p  # write back the modified particle if using array of dictionaries or structs
+		_particle_data.particles[i] = p # write back the modified particle if using array of dictionaries or structs
 
 func apply_forces() -> void:
 	for i in simulation_particles:
