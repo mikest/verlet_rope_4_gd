@@ -43,7 +43,6 @@ class RopeRaycastCollisionData:
 	var normal: Vector3
 	
 	func _init(position: Vector3, normal: Vector3) -> void:
-		print("pos")
 		self.position = position
 		self.normal = normal
 
@@ -121,6 +120,7 @@ var _attach_start := true
 		if _particle_data != null:
 			_particle_data.particles[0].is_attached = value
 
+
 var _attach_end: Node3D = null
 @export var attach_end: Node3D:
 	set(value):
@@ -161,10 +161,8 @@ var _attach_end: Node3D = null
 
 @export_group("Collision")
 
-@export_enum("StaticOnly", "DynamicOnly", "All")
-var rope_collision_type: int = 0 # 0 = StaticOnly
-@export_enum("None", "StickyStretch", "SlideStretch")
-var rope_collision_behavior: int = 0 # 0 = None
+@export var rope_collision_type: RopeCollisionType = RopeCollisionType.STATIC_ONLY # 0 = StaticOnly
+@export var rope_collision_behavior: RopeCollisionBehavior = RopeCollisionBehavior.NONE # 0 = None
 
 @export_range(1.0, 20.0) var max_rope_stretch: float = 1.1
 @export_range(1.0, 20.0) var slide_ignore_collision_stretch: float = 1.5
@@ -371,13 +369,13 @@ func get_rope_collisions() -> RopeCollisionInfo:
 	)
 
 	var is_static_collision := false
-	if RopeCollisionType in [RopeCollisionType.ALL, RopeCollisionType.STATIC_ONLY]:
+	if rope_collision_type in [RopeCollisionType.ALL, RopeCollisionType.STATIC_ONLY]:
 		_collision_shape_parameters.collision_mask = static_collision_mask
 		is_static_collision = _space_state.collide_shape(_collision_shape_parameters, 1).size() > 0
 
 	var dynamic_collisions: Array[Vector3] = []
 
-	if RopeCollisionType in [RopeCollisionType.ALL, RopeCollisionType.DYNAMIC_ONLY]:
+	if rope_collision_type in [RopeCollisionType.ALL, RopeCollisionType.DYNAMIC_ONLY]:
 		_collision_shape_parameters.collision_mask = dynamic_collision_mask
 		var results = _space_state.intersect_shape(_collision_shape_parameters, max_dynamic_collisions)
 		for hit in results:
@@ -407,6 +405,7 @@ func collide_rope(dynamic_collisions: Array) -> void:
 
 		if is_rope_stretched:
 			if rope_collision_behavior == RopeCollisionBehavior.STICKY_STRETCH:
+			# if rope_collision_behavior == RopeCollisionBehavior.SLIDE_STRETCH:
 				continue
 
 			var previous_point = _particle_data.particles[i - 1]
@@ -431,7 +430,7 @@ func collide_rope(dynamic_collisions: Array) -> void:
 
 		current_point.position_current = general_data.position + general_data.normal * COLLISION_CHECK_LENGTH
 
-		if is_rope_stretched:
+		if is_rope_stretched and general_data.normal != Vector3.ZERO:
 			current_point.position_current += particle_move.slide(general_data.normal)
 
 		_particle_data.particles[i] = current_point
@@ -446,19 +445,14 @@ func _get_camera() -> Camera3D:
 		return cam
 
 func draw_curve() -> void:
+	_camera = _get_camera()
+	calculate_rope_camera_orientation()
+		
 	# Ensure mesh exists
-	if _mesh == null:
-		print("Error: No mesh available for drawing curve")
-		return
+	assert(_mesh, "Rope is missing mesh")
+	assert(_camera, "Rope is missing camera")
 		
 	_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-
-	# Ensure camera exists for proper rendering
-	if _camera == null:
-		_camera = _get_camera()
-		if _camera == null:
-			print("Warning: No camera found for rope rendering")
-			return
 
 	var camera_position: Vector3 = _camera.global_position
 
@@ -512,7 +506,8 @@ func verlet_process(delta: float) -> void:
 		p.position_current = (2.0 * p.position_current) - p.position_previous + (delta * delta * p.acceleration)
 		p.position_previous = position_current_copy
 
-		_particle_data.particles[i] = p # write back the modified particle if using array of dictionaries or structs
+		# write back the modified particle if using array of dictionaries or structs
+		_particle_data.particles[i] = p
 
 func apply_forces() -> void:
 	for i in simulation_particles:
@@ -555,11 +550,13 @@ func apply_constraints() -> void:
 
 	collide_rope(dynamic_collisions)
 
+
 func get_configuration_warnings() -> PackedStringArray:
 	if use_visible_on_screen_notifier:
 		return PackedStringArray()
 	else:
 		return PackedStringArray([NO_NOTIFIER_WARNING])
+
 
 func _ready() -> void:
 	if not Engine.is_editor_hint() and start_draw_simulation_on_start:
@@ -599,7 +596,7 @@ func _ready() -> void:
 		add_child(_visible_notifier)
 
 	# Camera and space state references
-	_camera = get_viewport().get_camera_3d()
+	_camera = _get_camera()
 	if _camera == null:
 		push_warning("No camera found during rope initialization, rope may not render correctly")
 	
@@ -623,7 +620,7 @@ func _ready() -> void:
 			material_override = load(mat_path)
 		else:
 			# Fallback to a basic material if the default isn't found
-			print("Rope material not found at " + mat_path + ", creating default material")
+			push_warning("Rope material not found at " + mat_path + ", creating default material")
 			var mat = StandardMaterial3D.new()
 			mat.albedo_color = Color(0.5, 0.5, 0.5) # Gray color
 			mat.roughness = 0.8
@@ -632,10 +629,10 @@ func _ready() -> void:
 	# Generate rope particles
 	create_rope()
 
+
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		if _particle_data == null:
-			print("Creating rope in editor")
 			create_rope()
 		
 		# Update editor attachment (if any)
@@ -665,10 +662,10 @@ func _physics_process(delta: float) -> void:
 	update_attached_objects()
 
 	if draw:
-		_camera = get_viewport().get_camera_3d()
-		calculate_rope_camera_orientation()
-		_mesh.clear_surfaces()
 		reset_rope_rotation()
+		
+		if _mesh:
+			_mesh.clear_surfaces()
 		draw_rope_debug_particles()
 		draw_curve()
 
@@ -678,10 +675,9 @@ func _physics_process(delta: float) -> void:
 	emit_signal("simulation_step_event_handler", _simulation_delta)
 	_simulation_delta = 0.0
 
+
 func create_rope() -> void:
 	var end_location := global_position + Vector3.DOWN * rope_length
-
-	print("Creating rope with ", simulation_particles, " particles")
 
 	if _attach_end != null:
 		end_location = _attach_end.global_position
@@ -713,9 +709,11 @@ func create_rope() -> void:
 
 	calculate_rope_camera_orientation()
 
+
 func destroy_rope() -> void:
 	_particle_data.resize(0)
 	simulation_particles = 0
+
 
 func draw_rope_debug_particles() -> void:
 	const DEBUG_PARTICLE_LENGTH := 0.3
@@ -743,13 +741,14 @@ func draw_rope_debug_particles() -> void:
 
 	_mesh.surface_end()
 
+
 func _on_screen_entered():
-	print("entered screen")
 	draw = true
 
+
 func _on_screen_exited():
-	print("exited screen")
 	draw = false
+
 
 # Attaches a Node3D object to follow the end of the rope
 func attach_object_to_end(object: Node3D) -> void:
@@ -757,13 +756,13 @@ func attach_object_to_end(object: Node3D) -> void:
 		return
 		
 	_attached_object = object
-	print("Object attached to rope end: ", object.name)
+
 
 # Removes the attached object from following the rope end
 func detach_object_from_end() -> void:
 	if _attached_object != null:
-		print("Object detached from rope end: ", _attached_object.name)
 		_attached_object = null
+
 
 # Updates the position of the object attached to the rope end during gameplay
 func update_attached_objects() -> void:
@@ -791,6 +790,7 @@ func update_attached_objects() -> void:
 		if rotate_attached_object:
 			_update_object_rotation(_editor_attached_object, end_particle)
 
+
 # Updates attached object specifically in editor mode
 func update_attached_object_editor() -> void:
 	if not Engine.is_editor_hint() or _particle_data == null:
@@ -812,6 +812,7 @@ func update_attached_object_editor() -> void:
 		# Update rotation if enabled
 		if rotate_attached_object:
 			_update_object_rotation(_editor_attached_object, end_particle)
+
 
 # Helper to update an object's rotation to match rope end orientation
 func _update_object_rotation(object: Node3D, particle) -> void:
